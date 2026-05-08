@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Numzeriya</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="index.js" defer></script>
+</head>
+<body>
+  <main class="screen" aria-label="メニューブック番号入力">
+    <header class="header">番号を入力してください</header>
+
+    <img class="logo" src="./logo.png" alt="Numzeriya">
+
+    <div class="number-display" id="numberDisplay" aria-live="polite"></div>
+
+    <section class="keypad" aria-label="番号入力">
+      <button class="key key-1" type="button" data-key="1">1</button>
+      <button class="key key-2" type="button" data-key="2">2</button>
+      <button class="key key-3" type="button" data-key="3">3</button>
+      <button class="key key-4" type="button" data-key="4">4</button>
+      <button class="key key-5" type="button" data-key="5">5</button>
+      <button class="key key-6" type="button" data-key="6">6</button>
+      <button class="key key-7" type="button" data-key="7">7</button>
+      <button class="key key-8" type="button" data-key="8">8</button>
+      <button class="key key-9" type="button" data-key="9">9</button>
+      <button class="key delete-key" type="button" data-delete>削除</button>
+      <button class="key key-0" type="button" data-key="0">0</button>
+      <button class="key register-key" type="button" data-register>登録</button>
+    </section>
+
+    <nav class="bottom-nav" aria-label="操作メニュー">
+      <button class="nav-button nav-selected" type="button"><span>注文</span><span>追加</span></button>
+      <button class="nav-button nav-order" type="button"><span>注文</span><span>かご</span></button>
+      <button class="nav-button nav-history" type="button"><span>注文</span><span>履歴</span></button>
+      <button class="nav-button nav-staff" type="button"><span>店員</span><span>呼出</span></button>
+      <button class="nav-button nav-export" type="button" data-export><span>書き</span><span>出す</span></button>
+    </nav>
+  </main>
+</body>
+</html>
