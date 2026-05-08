@@ -9,6 +9,7 @@ const display = document.querySelector("#numberDisplay");
 const keys = document.querySelectorAll("[data-key]");
 const deleteKey = document.querySelector("[data-delete]");
 const registerKey = document.querySelector("[data-register]");
+const resetKey = document.querySelector("[data-reset]");
 const exportKey = document.querySelector("[data-export]");
 
 let value = "";
@@ -105,6 +106,11 @@ function saveLocalRecords(records) {
   localStorage.setItem(STORAGE_KEY, payload);
 }
 
+function clearLocalRecords() {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_BACKUP_KEY);
+}
+
 function openDatabase() {
   return new Promise((resolve, reject) => {
     if (!window.indexedDB) {
@@ -162,6 +168,24 @@ async function saveDatabaseRecords(records) {
   });
 }
 
+async function clearDatabaseRecords() {
+  const db = await openDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
+
+    store.clear();
+
+    transaction.oncomplete = () => {
+      db.close();
+      resolve();
+    };
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+}
+
 async function loadRecords() {
   const localRecords = loadLocalRecords();
 
@@ -209,6 +233,18 @@ async function saveRecords(records) {
   }
 }
 
+async function clearRecords() {
+  const results = await Promise.allSettled([
+    clearDatabaseRecords(),
+    Promise.resolve().then(clearLocalRecords),
+  ]);
+  const failed = results.some((result) => result.status === "rejected");
+
+  if (failed) {
+    throw new Error("Failed to clear records.");
+  }
+}
+
 async function registerValue() {
   const number = value;
 
@@ -236,6 +272,37 @@ async function registerValue() {
     alert("保存に失敗しました。ブラウザのストレージ設定を確認してください。");
   } finally {
     registerKey.disabled = false;
+  }
+}
+
+function confirmReset() {
+  if (!confirm("保存済みデータをすべて削除します。続けますか？")) {
+    return false;
+  }
+
+  if (!confirm("この操作は元に戻せません。CSVを書き出していないデータも削除されます。本当に続けますか？")) {
+    return false;
+  }
+
+  return prompt("最終確認です。削除するには「リセット」と入力してください。") === "リセット";
+}
+
+async function resetRecords() {
+  if (!confirmReset()) {
+    return;
+  }
+
+  resetKey.disabled = true;
+
+  try {
+    await clearRecords();
+    value = "";
+    render();
+    alert("保存データを削除しました。");
+  } catch {
+    alert("削除に失敗しました。ページを再読み込みしてからもう一度試してください。");
+  } finally {
+    resetKey.disabled = false;
   }
 }
 
@@ -304,5 +371,6 @@ deleteKey.addEventListener("click", () => {
 });
 
 registerKey.addEventListener("click", registerValue);
+resetKey.addEventListener("click", resetRecords);
 exportKey.addEventListener("click", exportCsv);
 requestPersistentStorage();
