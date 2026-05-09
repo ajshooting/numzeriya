@@ -10,12 +10,40 @@ const keys = document.querySelectorAll("[data-key]");
 const deleteKey = document.querySelector("[data-delete]");
 const registerKey = document.querySelector("[data-register]");
 const resetKey = document.querySelector("[data-reset]");
+const staffKey = document.querySelector("[data-staff]");
 const exportKey = document.querySelector("[data-export]");
 
 let value = "";
 
 function render() {
   display.textContent = value;
+}
+
+function addPressListener(button, handler) {
+  let lastPointerDownAt = 0;
+
+  button.addEventListener("pointerdown", (event) => {
+    if (button.disabled || event.button > 0) {
+      return;
+    }
+
+    lastPointerDownAt = Date.now();
+    event.preventDefault();
+    handler(event);
+  });
+
+  button.addEventListener("click", (event) => {
+    if (Date.now() - lastPointerDownAt < 700) {
+      event.preventDefault();
+      return;
+    }
+
+    if (button.disabled) {
+      return;
+    }
+
+    handler(event);
+  });
 }
 
 function formatLocalDateTime(date) {
@@ -306,6 +334,10 @@ async function resetRecords() {
   }
 }
 
+function callStaff() {
+  alert("呼び出せません！");
+}
+
 function escapeCsvValue(valueToEscape) {
   return `"${String(valueToEscape).replaceAll('"', '""')}"`;
 }
@@ -355,7 +387,7 @@ async function requestPersistentStorage() {
 }
 
 keys.forEach((key) => {
-  key.addEventListener("click", () => {
+  addPressListener(key, () => {
     if (value.length >= MAX_DIGITS) {
       return;
     }
@@ -365,12 +397,13 @@ keys.forEach((key) => {
   });
 });
 
-deleteKey.addEventListener("click", () => {
+addPressListener(deleteKey, () => {
   value = value.slice(0, -1);
   render();
 });
 
-registerKey.addEventListener("click", registerValue);
-resetKey.addEventListener("click", resetRecords);
-exportKey.addEventListener("click", exportCsv);
+addPressListener(registerKey, registerValue);
+addPressListener(resetKey, resetRecords);
+addPressListener(staffKey, callStaff);
+addPressListener(exportKey, exportCsv);
 requestPersistentStorage();
