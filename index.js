@@ -9,6 +9,8 @@ const display = document.querySelector("#numberDisplay");
 const keys = document.querySelectorAll("[data-key]");
 const deleteKey = document.querySelector("[data-delete]");
 const registerKey = document.querySelector("[data-register]");
+const orderAddKey = document.querySelector("[data-order-add]");
+const orderCartKey = document.querySelector("[data-order-cart]");
 const resetKey = document.querySelector("[data-reset]");
 const staffKey = document.querySelector("[data-staff]");
 const exportKey = document.querySelector("[data-export]");
@@ -338,15 +340,110 @@ function callStaff() {
   alert("呼び出せません！");
 }
 
+function showUnavailable() {
+  alert("使えません！");
+}
+
 function escapeCsvValue(valueToEscape) {
   return `"${String(valueToEscape).replaceAll('"', '""')}"`;
 }
 
+function escapeHtml(valueToEscape) {
+  return String(valueToEscape)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function showCsvInNewTab(exportWindow, csv, filename, url) {
+  exportWindow.document.open();
+  exportWindow.document.write(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(filename)}</title>
+  <style>
+    body {
+      margin: 24px;
+      color: #222;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    a {
+      display: inline-block;
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: #fff;
+      background: #428c36;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    pre {
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #f7f7f7;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+  <a href="${url}" download="${escapeHtml(filename)}">CSVをダウンロード</a>
+  <pre>${escapeHtml(csv)}</pre>
+</body>
+</html>`);
+  exportWindow.document.close();
+}
+
+function showExportLoading(exportWindow) {
+  exportWindow.document.open();
+  exportWindow.document.write(`
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSV準備中</title>
+</head>
+<body>
+  CSVを準備しています...
+</body>
+</html>`);
+  exportWindow.document.close();
+}
+
+function downloadCsvInCurrentTab(csv, filename) {
+  const blob = new Blob([`\uFEFF${csv}\r\n`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 async function exportCsv() {
+  const exportWindow = window.open("", "_blank");
+
+  if (exportWindow) {
+    showExportLoading(exportWindow);
+  }
+
   exportKey.disabled = true;
 
   try {
     const records = await loadRecords();
+    const filename = `numzeriya-${formatLocalDateTime(new Date()).replaceAll(":", "")}.csv`;
     const rows = [
       ["registered_at", "number"],
       ...records.map((record) => [
@@ -357,17 +454,20 @@ async function exportCsv() {
     const csv = rows
       .map((row) => row.map(escapeCsvValue).join(","))
       .join("\r\n");
-    const blob = new Blob([`\uFEFF${csv}\r\n`], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
 
-    link.href = url;
-    link.download = `numzeriya-${formatLocalDateTime(new Date()).replaceAll(":", "")}.csv`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    if (exportWindow) {
+      const blob = new Blob([`\uFEFF${csv}\r\n`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      showCsvInNewTab(exportWindow, csv, filename, url);
+    } else {
+      downloadCsvInCurrentTab(csv, filename);
+    }
   } catch {
+    if (exportWindow) {
+      exportWindow.close();
+    }
+
     alert("CSVの書き出しに失敗しました。");
   } finally {
     exportKey.disabled = false;
@@ -403,6 +503,8 @@ addPressListener(deleteKey, () => {
 });
 
 addPressListener(registerKey, registerValue);
+addPressListener(orderAddKey, showUnavailable);
+addPressListener(orderCartKey, showUnavailable);
 addPressListener(resetKey, resetRecords);
 addPressListener(staffKey, callStaff);
 addPressListener(exportKey, exportCsv);

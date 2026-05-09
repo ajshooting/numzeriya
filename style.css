@@ -163,10 +163,6 @@ button:disabled {
     inset 0 -4px 8px rgba(0, 0, 0, 0.08);
 }
 
-.nav-selected {
-  border: 4px solid var(--orange);
-}
-
 @media (max-height: 700px) {
   .logo {
     margin-top: 36px;
